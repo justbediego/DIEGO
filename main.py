@@ -1,7 +1,11 @@
 from world import World
+from brain import Brain
 
-world3 = World(3)
+world = World(3)
+brain = Brain(world.getSize())
 
-for i in range(10):
-    world3.newState()
-    print(world3.getState())
+while True:
+    world.newState()
+    brain.applyState(world.getState())
+    for i in range(100):
+        brain.thinkOnce()

@@ -19,7 +19,7 @@ class Neuron:
     def mutate(self, neurons):
         population = [i for i in neurons.keys() if i != self.nid]
         random.shuffle(population)
-        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 3))]
+        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 5))]
 
     def doForward(self, neurons):
         forward = 0
@@ -39,11 +39,10 @@ class Neuron:
         learning_rate = .1
         for d in self.dendrites:
             other = neurons[d.from_nid]
-            if other.forward > 0:
-                charge = self.backward * d.weight
-                d.weight = d.weight + (charge * learning_rate)
-                if not other.is_real:
-                    other.backward = charge
+            charge = self.backward * d.weight * (1 if other.forward > 0 else 0)
+            d.weight = d.weight + (charge * learning_rate)
+            if not other.is_real:
+                other.backward = charge
 
 
 class Brain:

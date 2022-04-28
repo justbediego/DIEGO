@@ -50,7 +50,7 @@ class Brain:
     def __init__(self, world_size):
         self.world_size = world_size
         self.neurons = {i: Neuron(i, True) for i in range(world_size)}
-        for i in range(world_size, 30):
+        for i in range(world_size, 100):
             self.neurons[i] = Neuron(i)
         for nid in self.neurons:
             self.neurons[nid].mutate(self.neurons)

@@ -47,6 +47,6 @@ if __name__ == '__main__':
     while True:
         world.newState()
         brain.applyState(world.getState())
-        for i in range(100):
+        for i in range(10):
             brain.thinkOnce()
             drawBrain()

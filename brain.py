@@ -17,7 +17,7 @@ class Neuron:
         self.backward = 0
 
     def mutate(self, neurons):
-        population = [i for i in neurons.keys()]
+        population = [i for i in neurons.keys() if i != self.nid]
         random.shuffle(population)
         self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 3))]
 
@@ -50,7 +50,7 @@ class Brain:
     def __init__(self, world_size):
         self.world_size = world_size
         self.neurons = {i: Neuron(i, True) for i in range(world_size)}
-        for i in range(world_size, 100):
+        for i in range(world_size, 30):
             self.neurons[i] = Neuron(i)
         for nid in self.neurons:
             self.neurons[nid].mutate(self.neurons)

@@ -21,9 +21,9 @@ def drawBrain():
     node_colors = []
     for nid in brain.neurons:
         neuron = brain.neurons[nid]
-        forward = 1 if neuron.forward > 1 else 0 if neuron.forward < 0 else neuron.forward
+        output = 1 if neuron.output > 1 else 0 if neuron.output < 0 else neuron.output
         G.add_node(nid)
-        node_colors.append([0, forward, 0, 1])
+        node_colors.append([0, output, 0, 1])
 
     edge_colors = []
     for nid in brain.neurons:

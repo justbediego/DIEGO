@@ -39,7 +39,7 @@ class Neuron:
         learning_rate = .1
         for d in self.dendrites:
             other = neurons[d.from_nid]
-            charge = self.backward * d.weight * (1 if other.forward > 0 else 0)
+            charge = self.backward * d.weight
             d.weight = d.weight + (charge * learning_rate)
             if not other.is_real:
                 other.backward = charge

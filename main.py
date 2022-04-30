@@ -17,7 +17,7 @@ def drawBrain():
             1 if mag > 1 else 0 if mag < 0 else mag
         ]
 
-    G = nx.Graph()
+    G = nx.DiGraph()
     node_colors = []
     for nid in brain.neurons:
         neuron = brain.neurons[nid]
@@ -28,7 +28,7 @@ def drawBrain():
     edge_colors = []
     for nid in brain.neurons:
         for d in brain.neurons[nid].dendrites:
-            G.add_edge(nid, d.from_nid)
+            G.add_edge(d.from_nid, nid)
             edge_colors.append(getRGBAColor(d.weight))
 
     plt.clf()
@@ -40,7 +40,7 @@ def drawBrain():
         pos=nx.circular_layout(G),
         edge_color=edge_colors
     )
-    plt.pause(0.05)
+    plt.pause(0.01)
 
 
 if __name__ == '__main__':

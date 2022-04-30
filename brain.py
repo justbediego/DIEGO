@@ -24,23 +24,23 @@ class Neuron:
     def mutate(self, neurons):
         population = [i for i in neurons.keys() if i != self.nid]
         random.shuffle(population)
-        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 5))]
+        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 2))]
 
-    def doForward(self, neurons):
-        output = 0
+    def doForwardBackward(self, neurons):
+        # forward
+        cal_output = 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
-            output = output + (other.output * d.weight)
+            cal_output = cal_output + (other.output * d.weight)
         # activation (relu)
-        output = output if output > 0 else 0
+        cal_output = cal_output if cal_output > 0 else 0
         if self.is_real:
-            self.backward = output - self.output
+            self.backward = cal_output - self.output
         else:
-            self.output = output
-
-    def doBackward(self, neurons):
-        learning_rate = .5
-        do_dzo = 1 if self.output > 0 else 0
+            self.output = cal_output
+        # backward
+        learning_rate = .1
+        do_dzo = 1 if cal_output > 0 else 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
             db_dw = self.backward * do_dzo * other.output
@@ -55,7 +55,7 @@ class Brain:
     def __init__(self, world_size):
         self.world_size = world_size
         self.neurons = {i: Neuron(i, True) for i in range(world_size)}
-        for i in range(world_size, 11):
+        for i in range(world_size, 30):
             self.neurons[i] = Neuron(i)
         for nid in self.neurons:
             self.neurons[nid].mutate(self.neurons)
@@ -69,9 +69,4 @@ class Brain:
         # output
         random.shuffle(population)
         for p in population:
-            self.neurons[p].doForward(self.neurons)
-
-        # backward
-        random.shuffle(population)
-        for p in population:
-            self.neurons[p].doBackward(self.neurons)
+            self.neurons[p].doForwardBackward(self.neurons)

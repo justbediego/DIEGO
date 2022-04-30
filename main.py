@@ -18,26 +18,25 @@ def drawBrain():
         ]
 
     G = nx.DiGraph()
-    node_colors = []
     for nid in brain.neurons:
         neuron = brain.neurons[nid]
         output = 1 if neuron.output > 1 else 0 if neuron.output < 0 else neuron.output
-        G.add_node(nid)
-        node_colors.append([0, output, 0, 1])
+        G.add_node(nid, color=[0, output, 0, 1])
 
-    edge_colors = []
     for nid in brain.neurons:
         for d in brain.neurons[nid].dendrites:
-            G.add_edge(d.from_nid, nid)
-            edge_colors.append(getRGBAColor(d.getWeight()))
+            G.add_edge(d.from_nid, nid, color=getRGBAColor(d.getWeight()))
 
     plt.clf()
+    edge_colors = nx.get_edge_attributes(G, 'color').values()
+    node_colors = list(nx.get_node_attributes(G, 'color').values())
+    pos = nx.circular_layout(G)
     nx.draw(
         G,
         node_color=node_colors,
         with_labels=True,
         font_color='white',
-        pos=nx.circular_layout(G),
+        pos=pos,
         edge_color=edge_colors
     )
     plt.pause(0.01)
@@ -49,4 +48,4 @@ if __name__ == '__main__':
         brain.applyState(world.getState())
         for i in range(10):
             brain.thinkOnce()
-            drawBrain()
+        drawBrain()

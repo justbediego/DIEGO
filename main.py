@@ -3,7 +3,7 @@ from brain import Brain
 import networkx as nx
 import matplotlib.pyplot as plt
 
-world = World(3)
+world = World(1)
 brain = Brain(world.getSize())
 
 
@@ -29,7 +29,7 @@ def drawBrain():
     for nid in brain.neurons:
         for d in brain.neurons[nid].dendrites:
             G.add_edge(d.from_nid, nid)
-            edge_colors.append(getRGBAColor(d.weight))
+            edge_colors.append(getRGBAColor(d.getWeight()))
 
     plt.clf()
     nx.draw(

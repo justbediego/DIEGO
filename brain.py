@@ -6,11 +6,23 @@ def sigmoid(x):
     return np.divide(1, (1 + np.exp(-x)))
 
 
+def activation(x):
+    return sigmoid(x)
+
+
+def dActivation(x):
+    tmp = sigmoid(x)
+    return tmp * (1 - tmp)
+
+
 class Dendrite:
     def __init__(self, from_nid):
         self.from_nid = from_nid
-        self.weight = 2 * random.random() - 1
-        self.trust = 1
+        self.yes, self.no = random.choices([i for i in range(10)], k=2)
+
+    def getWeight(self):
+        # 1 to -1
+        return (self.yes - self.no) / (self.yes + self.no)
 
 
 class Neuron:
@@ -24,30 +36,31 @@ class Neuron:
     def mutate(self, neurons):
         population = [i for i in neurons.keys() if i != self.nid]
         random.shuffle(population)
-        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 2))]
+        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(3, 3))]
 
     def doForwardBackward(self, neurons):
         # forward
-        cal_output = 0
+        z = 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
-            cal_output = cal_output + (other.output * d.weight)
-        # activation (relu)
-        cal_output = cal_output if cal_output > 0 else 0
+            z = z + other.output * d.getWeight()
+        o = activation(z)
         if self.is_real:
-            self.backward = cal_output - self.output
+            self.backward = self.output - o
         else:
-            self.output = cal_output
+            self.output = o
         # backward
-        learning_rate = .1
-        do_dzo = 1 if cal_output > 0 else 0
+        do_dzo = dActivation(z)
         for d in self.dendrites:
             other = neurons[d.from_nid]
             db_dw = self.backward * do_dzo * other.output
             if not other.is_real:
-                other.backward = other.backward + self.backward * do_dzo * d.weight
+                other.backward = other.backward + self.backward * do_dzo * d.getWeight()
             # update
-            d.weight = d.weight - learning_rate * db_dw
+            if db_dw > 0:
+                d.yes = d.yes + db_dw
+            else:
+                d.no = d.no + db_dw
         self.backward = 0
 
 
@@ -55,7 +68,7 @@ class Brain:
     def __init__(self, world_size):
         self.world_size = world_size
         self.neurons = {i: Neuron(i, True) for i in range(world_size)}
-        for i in range(world_size, 30):
+        for i in range(world_size, 3):
             self.neurons[i] = Neuron(i)
         for nid in self.neurons:
             self.neurons[nid].mutate(self.neurons)

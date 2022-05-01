@@ -37,17 +37,22 @@ class Dendrite:
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False, dendrites=[]):
+    def __init__(self, nid, is_real=False):
         self.nid = nid
         self.is_real = is_real
-        self.dendrites = dendrites
+        self.dendrites = []
         self.output = 0
         self.backward = 0
 
     def mutate(self, neurons):
-        population = [i for i in neurons.keys() if i != self.nid]
+        current_from_s = [d.from_nid for d in self.dendrites]
+        population = [i for i in neurons.keys() if i != self.nid and i not in current_from_s]
         random.shuffle(population)
-        self.dendrites = [Dendrite(population[i]) for i in range(random.randint(2, 4))]
+        if len(population) == 0:
+            return
+        new_dendrite_count = random.randint(1, min(3, len(population)))
+        for i in range(new_dendrite_count):
+            self.dendrites.append(Dendrite(population[i]))
 
     def doForward(self, neurons):
         if self.is_real:
@@ -71,13 +76,15 @@ class Neuron:
 
 
 class Brain:
-    def __init__(self, world_size, file_name=None):
+    def __init__(self, world_size, file_name=None, max_generation=30, min_generation=5):
         self.world_size = world_size
+        self.max_generation = max_generation
+        self.min_generation = min_generation
         if file_name is not None:
             self.loadBrain(file_name)
         else:
             self.neurons = {i: Neuron(i, True) for i in range(world_size)}
-            for i in range(world_size, 30):
+            for i in range(world_size, world_size + max_generation):
                 self.neurons[i] = Neuron(i)
             for nid in self.neurons:
                 self.neurons[nid].mutate(self.neurons)
@@ -121,10 +128,36 @@ class Brain:
             nid, is_real = left.split(",")
             nid = int(nid.replace('[', ""))
             is_real = True if is_real[0] == 'R' else False
-            dendrites = right.split(',')
-            dendrites = [[int(x) for x in d.split(':')[:-1]] for d in dendrites]
-            dendrites = [Dendrite(d[0], [d[1], d[2]]) for d in dendrites]
-            self.neurons[nid] = Neuron(nid, is_real, dendrites)
+            self.neurons[nid] = Neuron(nid, is_real)
+            if ':' in right:
+                dendrites = right.split(',')
+                dendrites = [[int(x) for x in d.split(':')[:-1]] for d in dendrites]
+                dendrites = [Dendrite(d[0], [d[1], d[2]]) for d in dendrites]
+                self.neurons[nid].dendrites = dendrites
 
     def sleep(self):
-        print("wow")
+        # removing unused
+        n_map = {nid: 0 for nid in self.neurons}
+        for nid in self.neurons:
+            for dendrite in self.neurons[nid].dendrites:
+                weight = abs(dendrite.getWeight())
+                n_map[dendrite.from_nid] = max(weight, n_map[dendrite.from_nid])
+        n_map = [[nid, n_map[nid]] for nid in n_map if not self.neurons[nid].is_real]
+        n_map.sort(key=lambda x: x[1], reverse=True)
+        deleting_nid_s = [x[0] for x in n_map[self.min_generation:]]
+        for nid in deleting_nid_s:
+            self.neurons.pop(nid)
+        for nid in self.neurons:
+            neuron = self.neurons[nid]
+            for i in range(len(neuron.dendrites) - 1, -1, -1):
+                dendrite = neuron.dendrites[i]
+                if dendrite.from_nid in deleting_nid_s:
+                    neuron.dendrites.pop(i)
+        # generating new
+        n_count = len(self.neurons)
+        last_nid = max(self.neurons)
+        for i in range(self.max_generation - n_count):
+            self.neurons[i + last_nid] = Neuron(i + last_nid)
+        for nid in self.neurons:
+            self.neurons[nid].mutate(self.neurons)
+        print("done sleeping")

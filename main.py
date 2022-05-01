@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(1)
-brain = Brain(world.getSize(), './brain.dat')
+brain = Brain(world.getSize(), 'brain.txt')
 
 
 def drawBrain():
@@ -53,4 +53,4 @@ if __name__ == '__main__':
                 brain.thinkOnce()
             drawBrain()
         brain.sleep()
-        brain.dumpBrain("./brain.dat")
+        brain.dumpBrain("brain.txt")

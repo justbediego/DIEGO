@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(1)
-brain = Brain(world.getSize())
+brain = Brain(world.getSize(), './brain.dat')
 
 
 def drawBrain():
@@ -44,8 +44,13 @@ def drawBrain():
 
 if __name__ == '__main__':
     while True:
-        world.newState()
-        brain.applyState(world.getState())
-        for i in range(10):
-            brain.thinkOnce()
-        drawBrain()
+        # 100 things happen in a day
+        for i in range(100):
+            world.newState()
+            brain.applyState(world.getState())
+            # each one is thought 10 times
+            for i in range(10):
+                brain.thinkOnce()
+            drawBrain()
+        brain.sleep()
+        brain.dumpBrain("./brain.dat")

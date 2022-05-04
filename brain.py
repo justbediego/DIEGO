@@ -7,11 +7,14 @@ def sigmoid(x):
 
 
 def activation(x):
-    return 1 if x > 0 else 0
+    return sigmoid(x)
+    # return 1 if x > 0 else 0
 
 
 def dActivation(x):
-    return 1 if x > 0 else 0
+    tmp = sigmoid(x)
+    return tmp * (1 - tmp)
+    # return 1 if x > 0 else 0
 
 
 class Dendrite:
@@ -20,8 +23,12 @@ class Dendrite:
         if yes_no is not None:
             self.yes, self.no = yes_no
         else:
-            self.yes, self.no = random.choices([i for i in range(1, 10)], k=2)
-        # self.weight = 2 * random.random() - 1
+            self.yes = 0
+            while self.yes == 0:
+                self.yes = random.random()
+            self.no = self.yes
+            while self.no == self.yes or self.no == 0:
+                self.no = random.random()
 
     def getWeight(self):
         # 1 to -1
@@ -37,12 +44,14 @@ class Dendrite:
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False):
+    def __init__(self, nid, is_real=False, passed_forward=0, passed_backward=0):
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
         self.output = 0
         self.backward = 0
+        self.passed_backward = passed_backward
+        self.passed_forward = passed_forward
 
     def mutate(self, neurons):
         current_from_s = [d.from_nid for d in self.dendrites]
@@ -50,28 +59,31 @@ class Neuron:
         random.shuffle(population)
         if len(population) == 0:
             return
-        new_dendrite_count = random.randint(1, min(3, len(population)))
+        new_dendrite_count = random.randint(9, min(9, len(population)))
         for i in range(new_dendrite_count):
             self.dendrites.append(Dendrite(population[i]))
 
-    def doForward(self, neurons):
+    def doForwardBackward(self, neurons):
+        # forward
+        z = 0
+        for d in self.dendrites:
+            other = neurons[d.from_nid]
+            z = z + other.output * d.getWeight()
+        o = activation(z)
         if self.is_real:
-            self.backward = self.output
+            self.backward = self.output - o
         else:
-            z = 0
-            for d in self.dendrites:
-                other = neurons[d.from_nid]
-                z = z + other.output * d.getWeight()
-            self.output = activation(z)
-
-    def doBackward(self, neurons):
+            self.output = o
+        self.passed_forward = self.passed_forward + self.output
+        # backward
+        energy = dActivation(z)
         for d in self.dendrites:
             other = neurons[d.from_nid]
             if not other.is_real:
-                other.backward = other.backward + self.backward * d.getWeight()
+                other.backward = other.backward + self.backward * other.output * d.getWeight()
             # update
-            diff = 1 - 2 * abs(other.output - self.backward)
-            d.increaseWeight(diff)
+            d.increaseWeight(self.backward * other.output * energy)
+        self.passed_backward = self.passed_backward + self.backward
         self.backward = 0
 
 
@@ -89,22 +101,6 @@ class Brain:
             for nid in self.neurons:
                 self.neurons[nid].mutate(self.neurons)
 
-    def applyState(self, state):
-        for i in range(self.world_size):
-            self.neurons[i].output = state[i]
-
-    def thinkOnce(self, backward=True):
-        population = [i for i in self.neurons.keys()]
-        # forward
-        random.shuffle(population)
-        for p in population:
-            self.neurons[p].doForward(self.neurons)
-        # backward
-        if backward:
-            random.shuffle(population)
-            for p in population:
-                self.neurons[p].doBackward(self.neurons)
-
     def dumpBrain(self, filename):
         lines = []
         nid_s = list(self.neurons.keys())
@@ -112,8 +108,9 @@ class Brain:
         for nid in nid_s:
             neuron = self.neurons[nid]
             neuron.dendrites.sort(key=lambda x: x.from_nid)
-            n_output = ', '.join([F"{d.from_nid}:{d.yes}:{d.no}:{d.getWeight():.2f}" for d in neuron.dendrites])
-            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'}]-> {n_output}")
+            n_output = ', '.join([F"{d.from_nid}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
+            lines.append(
+                F"[{nid},{'R' if neuron.is_real else 'H'},{neuron.passed_forward:.2f},{neuron.passed_backward:.2f}]-> {n_output}")
         output = '\n'.join(lines)
         with open(filename, 'w') as fp:
             fp.write(output)
@@ -125,15 +122,27 @@ class Brain:
         self.neurons = {}
         for line in lines:
             left, right = line.split("->")
-            nid, is_real = left.split(",")
-            nid = int(nid.replace('[', ""))
-            is_real = True if is_real[0] == 'R' else False
-            self.neurons[nid] = Neuron(nid, is_real)
+            nid, is_real, forward, backward = left.replace('[', "").replace(']', "").split(",")
+            nid = int(nid)
+            is_real = True if is_real == 'R' else False
+            forward = float(forward)
+            backward = float(backward)
+            self.neurons[nid] = Neuron(nid, is_real, forward, backward)
             if ':' in right:
                 dendrites = right.split(',')
-                dendrites = [[int(x) for x in d.split(':')[:-1]] for d in dendrites]
+                dendrites = [[float(x) for x in d.split(':')] for d in dendrites]
                 dendrites = [Dendrite(d[0], [d[1], d[2]]) for d in dendrites]
                 self.neurons[nid].dendrites = dendrites
+
+    def applyState(self, state):
+        for i in range(self.world_size):
+            self.neurons[i].output = state[i]
+
+    def thinkOnce(self, backward=True):
+        population = [i for i in self.neurons.keys()]
+        random.shuffle(population)
+        for p in population:
+            self.neurons[p].doForwardBackward(self.neurons)
 
     def sleep(self):
         # removing unused

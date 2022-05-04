@@ -3,8 +3,8 @@ from brain import Brain
 import networkx as nx
 import matplotlib.pyplot as plt
 
-world = World(1)
-brain = Brain(world.getSize(), 'brain.txt')
+world = World(3)
+brain = Brain(world.getSize(), "brain.txt", max_generation=0)
 
 
 def drawBrain():
@@ -49,7 +49,7 @@ if __name__ == '__main__':
             world.newState()
             brain.applyState(world.getState())
             # each one is thought 10 times
-            for i in range(10):
+            for j in range(10):
                 brain.thinkOnce()
             drawBrain()
         brain.sleep()

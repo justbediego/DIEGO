@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(3)
-brain = Brain(world.getSize(), "brain.txt", max_generation=0)
+brain = Brain(world.getSize(), min_generation=5, max_generation=30)
 
 
 def drawBrain():

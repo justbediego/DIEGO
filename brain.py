@@ -71,18 +71,20 @@ class Neuron:
             z = z + other.output * d.getWeight()
         o = activation(z)
         if self.is_real:
-            self.backward = self.output - o
+            self.backward = self.output
         else:
             self.output = o
-        self.passed_forward = self.passed_forward + self.output
         # backward
-        energy = dActivation(z)
+        diff = self.backward - o
+        diff = diff * dActivation(z)
         for d in self.dendrites:
             other = neurons[d.from_nid]
             if not other.is_real:
-                other.backward = other.backward + self.backward * other.output * d.getWeight()
+                other.backward = other.backward + self.backward * d.getWeight()
             # update
-            d.increaseWeight(self.backward * other.output * energy)
+            d.increaseWeight(diff * other.output)
+        # efficiency
+        self.passed_forward = self.passed_forward + self.output
         self.passed_backward = self.passed_backward + self.backward
         self.backward = 0
 

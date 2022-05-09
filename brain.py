@@ -53,13 +53,16 @@ class Neuron:
         self.passed_backward = passed_backward
         self.passed_forward = passed_forward
 
+    def getScore(self):
+        return -abs(self.passed_forward - self.passed_backward)
+
     def mutate(self, neurons):
         current_from_s = [d.from_nid for d in self.dendrites]
         population = [i for i in neurons.keys() if i != self.nid and i not in current_from_s]
         random.shuffle(population)
         if len(population) == 0:
             return
-        new_dendrite_count = random.randint(9, min(9, len(population)))
+        new_dendrite_count = len(population) # random.randint(2, min(3, len(population)))
         for i in range(new_dendrite_count):
             self.dendrites.append(Dendrite(population[i]))
 
@@ -147,13 +150,8 @@ class Brain:
             self.neurons[p].doForwardBackward(self.neurons)
 
     def sleep(self):
-        # removing unused
-        n_map = {nid: 0 for nid in self.neurons}
-        for nid in self.neurons:
-            for dendrite in self.neurons[nid].dendrites:
-                weight = abs(dendrite.getWeight())
-                n_map[dendrite.from_nid] = max(weight, n_map[dendrite.from_nid])
-        n_map = [[nid, n_map[nid]] for nid in n_map if not self.neurons[nid].is_real]
+        n_map = [[nid, self.neurons[nid].getScore()] for nid in self.neurons if not self.neurons[nid].is_real]
+        n_map = [[x[0], -np.inf if (x[1] == 0 or np.isnan(x[1])) else x[1]] for x in n_map]
         n_map.sort(key=lambda x: x[1], reverse=True)
         deleting_nid_s = [x[0] for x in n_map[self.min_generation:]]
         for nid in deleting_nid_s:
@@ -166,9 +164,8 @@ class Brain:
                     neuron.dendrites.pop(i)
         # generating new
         n_count = len(self.neurons)
-        last_nid = max(self.neurons)
+        last_nid = max(self.neurons) + 1
         for i in range(self.max_generation - n_count):
             self.neurons[i + last_nid] = Neuron(i + last_nid)
         for nid in self.neurons:
             self.neurons[nid].mutate(self.neurons)
-        print("done sleeping")

@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(3)
-brain = Brain(world.getSize(), min_generation=5, max_generation=30)
+brain = Brain(world.getSize(), 'brain.txt', min_generation=0, max_generation=0)
 
 
 def drawBrain():
@@ -52,5 +52,6 @@ if __name__ == '__main__':
             for j in range(10):
                 brain.thinkOnce()
             drawBrain()
-        brain.sleep()
-        brain.dumpBrain("brain.txt")
+        # brain.sleep()
+        # brain.dumpBrain("brain.txt")
+        print("one day")

@@ -7,14 +7,14 @@ def sigmoid(x):
 
 
 def activation(x):
-    return sigmoid(x)
-    # return 1 if x > 0 else 0
+    # return sigmoid(x)
+    return x if x > 0 else 0
 
 
 def dActivation(x):
-    tmp = sigmoid(x)
-    return tmp * (1 - tmp)
-    # return 1 if x > 0 else 0
+    # tmp = sigmoid(x)
+    # return tmp * (1 - tmp)
+    return 1 if x > 0 else 0
 
 
 class Dendrite:
@@ -37,9 +37,9 @@ class Dendrite:
 
     def increaseWeight(self, amount):
         if amount > 0:
-            self.yes = self.yes + 1
+            self.yes = self.yes + amount
         elif amount < 0:
-            self.no = self.no + 1
+            self.no = self.no - amount
         # self.weight = self.weight + amount
 
 
@@ -78,6 +78,7 @@ class Neuron:
         else:
             self.output = o
         # backward
+        learning_rate = .1
         diff = self.backward - o
         diff = diff * dActivation(z)
         for d in self.dendrites:
@@ -85,7 +86,7 @@ class Neuron:
             if not other.is_real:
                 other.backward = other.backward + self.backward * d.getWeight()
             # update
-            d.increaseWeight(diff * other.output)
+            d.increaseWeight(diff * other.output * learning_rate)
         # efficiency
         self.passed_forward = self.passed_forward + self.output
         self.passed_backward = self.passed_backward + self.backward

@@ -48,10 +48,10 @@ if __name__ == '__main__':
         for i in range(100):
             world.newState()
             brain.applyState(world.getState())
-            # each one is thought 10 times
+            # each one is thought X times
             for j in range(10):
                 brain.thinkOnce()
             drawBrain()
         # brain.sleep()
-        # brain.dumpBrain("brain.txt")
+        brain.dumpBrain("brain.txt")
         print("one day")

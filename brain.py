@@ -78,7 +78,6 @@ class Neuron:
         else:
             self.output = o
         # backward
-        learning_rate = .1
         diff = self.backward - o
         diff = diff * dActivation(z)
         for d in self.dendrites:
@@ -86,7 +85,7 @@ class Neuron:
             if not other.is_real:
                 other.backward = other.backward + self.backward * d.getWeight()
             # update
-            d.increaseWeight(diff * other.output * learning_rate)
+            d.increaseWeight(diff * other.output)
         # efficiency
         self.passed_forward = self.passed_forward + self.output
         self.passed_backward = self.passed_backward + self.backward

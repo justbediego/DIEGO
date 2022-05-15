@@ -40,18 +40,16 @@ class Dendrite:
             self.yes = self.yes + amount
         elif amount < 0:
             self.no = self.no - amount
-        # self.weight = self.weight + amount
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False, passed_forward=0, passed_backward=0):
+    def __init__(self, nid, is_real=False):
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
         self.output = 0
         self.backward = 0
-        self.passed_backward = passed_backward
-        self.passed_forward = passed_forward
+        self.incoming_energy = 0
 
     def mutate(self, neurons):
         current_from_s = [d.from_nid for d in self.dendrites]
@@ -63,29 +61,27 @@ class Neuron:
         for i in range(new_dendrite_count):
             self.dendrites.append(Dendrite(population[i]))
 
-    def doForwardBackward(self, neurons):
-        # forward
+    def doForward(self, neurons):
         z = 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
             z = z + other.output * d.getWeight()
+        self.incoming_energy = z
         o = activation(z)
         if self.is_real:
-            self.backward = self.output
+            self.backward = self.output - o
         else:
             self.output = o
-        # backward
-        diff = self.backward - o
-        diff = diff * dActivation(z)
+
+    def doBackward(self, neurons):
+        diff = self.backward
+        diff = diff * dActivation(self.incoming_energy)
         for d in self.dendrites:
             other = neurons[d.from_nid]
             if not other.is_real:
-                other.backward = other.backward + self.backward * d.getWeight()
+                other.backward = other.backward + diff * d.getWeight()
             # update
             d.increaseWeight(diff * other.output)
-        # efficiency
-        self.passed_forward = self.passed_forward + self.output
-        self.passed_backward = self.passed_backward + self.backward
         self.backward = 0
 
 
@@ -110,9 +106,8 @@ class Brain:
         for nid in nid_s:
             neuron = self.neurons[nid]
             neuron.dendrites.sort(key=lambda x: x.from_nid)
-            n_output = ', '.join([F"{d.from_nid}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
-            lines.append(
-                F"[{nid},{'R' if neuron.is_real else 'H'},{neuron.passed_forward:.2f},{neuron.passed_backward:.2f}]-> {n_output}")
+            n_output = ', '.join([F"{int(d.from_nid)}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
+            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'}]-> {n_output}")
         output = '\n'.join(lines)
         with open(filename, 'w') as fp:
             fp.write(output)
@@ -124,12 +119,10 @@ class Brain:
         self.neurons = {}
         for line in lines:
             left, right = line.split("->")
-            nid, is_real, forward, backward = left.replace('[', "").replace(']', "").split(",")
+            nid, is_real = left.replace('[', "").replace(']', "").split(",")
             nid = int(nid)
             is_real = True if is_real == 'R' else False
-            forward = float(forward)
-            backward = float(backward)
-            self.neurons[nid] = Neuron(nid, is_real, forward, backward)
+            self.neurons[nid] = Neuron(nid, is_real)
             if ':' in right:
                 dendrites = right.split(',')
                 dendrites = [[float(x) for x in d.split(':')] for d in dendrites]
@@ -142,9 +135,15 @@ class Brain:
 
     def thinkOnce(self, backward=True):
         population = [i for i in self.neurons.keys()]
+        # forward
         random.shuffle(population)
         for p in population:
-            self.neurons[p].doForwardBackward(self.neurons)
+            self.neurons[p].doForward(self.neurons)
+        if backward:
+            # backward
+            random.shuffle(population)
+            for p in population:
+                self.neurons[p].doBackward(self.neurons)
 
     def sleep(self):
         # removing unused

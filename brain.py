@@ -29,6 +29,8 @@ class Dendrite:
             self.no = self.yes
             while self.no == self.yes or self.no == 0:
                 self.no = random.random()
+            self.yes = self.yes + 10
+            self.no = self.no + 10
 
     def getWeight(self):
         # 1 to -1
@@ -43,13 +45,18 @@ class Dendrite:
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False):
+    def __init__(self, nid, is_real=False, age=0):
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
         self.output = 0
-        self.backward = 0
+        self.backward = None
         self.incoming_energy = 0
+        self.age = age
+
+    def getScore(self):
+        best = np.max([abs(d.getWeight()) for d in self.dendrites])
+        return self.age * best
 
     def mutate(self, neurons):
         current_from_s = [d.from_nid for d in self.dendrites]
@@ -74,15 +81,16 @@ class Neuron:
             self.output = o
 
     def doBackward(self, neurons):
-        diff = self.backward
-        diff = diff * dActivation(self.incoming_energy)
-        for d in self.dendrites:
-            other = neurons[d.from_nid]
-            if not other.is_real:
-                other.backward = other.backward + diff * d.getWeight()
-            # update
-            d.increaseWeight(diff * other.output)
-        self.backward = 0
+        if self.backward is not None:
+            self.age = self.age + 1
+            diff = self.backward * dActivation(self.incoming_energy)
+            for d in self.dendrites:
+                other = neurons[d.from_nid]
+                if not other.is_real:
+                    other.backward = (0 if other.backward is None else other.backward) + diff * d.getWeight()
+                # update
+                d.increaseWeight(diff * other.output)
+            self.backward = None
 
 
 class Brain:
@@ -106,8 +114,9 @@ class Brain:
         for nid in nid_s:
             neuron = self.neurons[nid]
             neuron.dendrites.sort(key=lambda x: x.from_nid)
-            n_output = ', '.join([F"{int(d.from_nid)}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
-            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'}]-> {n_output}")
+            n_output = ', '.join(
+                [F"{int(d.from_nid)}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
+            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'},{neuron.age}]-> {n_output}")
         output = '\n'.join(lines)
         with open(filename, 'w') as fp:
             fp.write(output)
@@ -119,10 +128,11 @@ class Brain:
         self.neurons = {}
         for line in lines:
             left, right = line.split("->")
-            nid, is_real = left.replace('[', "").replace(']', "").split(",")
+            nid, is_real, age = left.replace('[', "").replace(']', "").split(",")
             nid = int(nid)
             is_real = True if is_real == 'R' else False
-            self.neurons[nid] = Neuron(nid, is_real)
+            age = int(age)
+            self.neurons[nid] = Neuron(nid, is_real, age)
             if ':' in right:
                 dendrites = right.split(',')
                 dendrites = [[float(x) for x in d.split(':')] for d in dendrites]
@@ -146,13 +156,8 @@ class Brain:
                 self.neurons[p].doBackward(self.neurons)
 
     def sleep(self):
-        # removing unused
-        n_map = {nid: 0 for nid in self.neurons}
-        for nid in self.neurons:
-            for dendrite in self.neurons[nid].dendrites:
-                weight = abs(dendrite.getWeight())
-                n_map[dendrite.from_nid] = max(weight, n_map[dendrite.from_nid])
-        n_map = [[nid, n_map[nid]] for nid in n_map if not self.neurons[nid].is_real]
+        n_map = [[nid, self.neurons[nid].getScore()] for nid in self.neurons if not self.neurons[nid].is_real]
+        n_map = [[x[0], -np.inf if (x[1] == 0 or np.isnan(x[1])) else x[1]] for x in n_map]
         n_map.sort(key=lambda x: x[1], reverse=True)
         deleting_nid_s = [x[0] for x in n_map[self.min_generation:]]
         for nid in deleting_nid_s:

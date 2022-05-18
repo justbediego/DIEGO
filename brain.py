@@ -38,11 +38,6 @@ class Dendrite:
         # return self.weight
 
     def increaseWeight(self, amount):
-        if self.yes < 10000000 and self.no < 10000000 and ((self.yes + amount) > 10000000 or (self.no - amount) > 10000000):
-            print("WHAT")
-            print(self.yes)
-            print(self.no)
-            print(amount)
         if amount > 0:
             self.yes = self.yes + amount
         elif amount < 0:
@@ -54,9 +49,6 @@ class Neuron:
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
-        self.output = 0
-        self.backward = None
-        self.incoming_energy = 0
         self.age = age
 
     def getScore(self):
@@ -149,6 +141,11 @@ class Brain:
             self.neurons[i].output = state[i]
 
     def thinkOnce(self, backward=True):
+        # clearing
+        for p in range(self.world_size, len(self.neurons)):
+            self.neurons[p].output = 0
+            self.neurons[p].backward = None
+            self.neurons[p].incoming_energy = 0
         population = [i for i in self.neurons.keys()]
         # forward
         random.shuffle(population)

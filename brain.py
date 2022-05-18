@@ -50,6 +50,9 @@ class Neuron:
         self.is_real = is_real
         self.dendrites = []
         self.age = age
+        self.output = 0
+        self.backward = None
+        self.incoming_energy = 0
 
     def getScore(self):
         best = np.max([abs(d.getWeight()) for d in self.dendrites])
@@ -61,8 +64,9 @@ class Neuron:
         random.shuffle(population)
         if len(population) == 0:
             return
-        new_dendrite_count = random.randint(2, min(3, len(population)))
-        for i in range(new_dendrite_count):
+        dendrite_count = random.randint(2, min(3, len(population)))
+        # new_dendrite_count = dendrite_count - len(self.dendrites)
+        for i in range(dendrite_count):
             self.dendrites.append(Dendrite(population[i]))
 
     def doForward(self, neurons):
@@ -141,12 +145,12 @@ class Brain:
             self.neurons[i].output = state[i]
 
     def thinkOnce(self, backward=True):
+        population = [i for i in self.neurons.keys()]
         # clearing
         for p in range(self.world_size, len(self.neurons)):
-            self.neurons[p].output = 0
-            self.neurons[p].backward = None
-            self.neurons[p].incoming_energy = 0
-        population = [i for i in self.neurons.keys()]
+            self.neurons[population[p]].output = 0
+            self.neurons[population[p]].backward = None
+            self.neurons[population[p]].incoming_energy = 0
         # forward
         random.shuffle(population)
         for p in population:

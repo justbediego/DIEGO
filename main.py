@@ -50,7 +50,7 @@ if __name__ == '__main__':
             brain.applyState(world.getState())
             # drawBrain()
             # each one is thought X times
-            for j in range(1000):
+            for j in range(100):
                 brain.thinkOnce()
         brain.sleep()
         brain.dumpBrain("brain.txt")

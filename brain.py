@@ -38,6 +38,11 @@ class Dendrite:
         # return self.weight
 
     def increaseWeight(self, amount):
+        if self.yes < 10000000 and self.no < 10000000 and ((self.yes + amount) > 10000000 or (self.no - amount) > 10000000):
+            print("WHAT")
+            print(self.yes)
+            print(self.no)
+            print(amount)
         if amount > 0:
             self.yes = self.yes + amount
         elif amount < 0:
@@ -45,7 +50,7 @@ class Dendrite:
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False, age=0):
+    def __init__(self, nid, is_real=False, age=1):
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
@@ -56,7 +61,7 @@ class Neuron:
 
     def getScore(self):
         best = np.max([abs(d.getWeight()) for d in self.dendrites])
-        return self.age * best
+        return np.log(self.age) * best
 
     def mutate(self, neurons):
         current_from_s = [d.from_nid for d in self.dendrites]

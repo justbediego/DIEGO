@@ -42,16 +42,38 @@ def drawBrain():
     plt.pause(0.01)
 
 
-if __name__ == '__main__':
+def learnForever():
     while True:
         # 100 things happen in a day
         for i in range(100):
             world.newState()
             brain.applyState(world.getState())
-            drawBrain()
+            # drawBrain()
             # each one is thought X times
             for j in range(100):
                 brain.thinkOnce()
         # brain.sleep()
         brain.dumpBrain("brain.txt")
         print("one day")
+
+
+def test():
+    result = []
+    for m in range(world.getSize()):
+        known_mask = [(1 if i != m else 0) for i in range(world.getSize())]
+        for i in range(world.getSize()):
+            brain.neurons[i].is_real = known_mask[i]
+        for i in range(100):
+            world.newState()
+            brain.applyState(world.getState())
+            for j in range(100):
+                brain.thinkOnce()
+            result.append([world.getState()[m], brain.neurons[m].output])
+    result.sort(key=lambda x: x[0])
+    plt.plot([x[0] for x in result])
+    plt.plot([x[1] for x in result])
+    plt.show()
+
+
+if __name__ == '__main__':
+    test()

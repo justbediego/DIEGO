@@ -59,15 +59,19 @@ class Neuron:
         return np.log(self.age) * best
 
     def mutate(self, neurons):
-        current_from_s = [d.from_nid for d in self.dendrites]
-        population = [i for i in neurons.keys() if i != self.nid and i not in current_from_s]
-        random.shuffle(population)
-        if len(population) == 0:
-            return
-        dendrite_count = random.randint(2, min(3, len(population)))
+        all_dendrites = [
+            i for i in neurons.keys()
+            if (not self.is_real and i < self.nid) or (self.is_real and i != self.nid)
+        ]
+        current_dendrites = [d.from_nid for d in self.dendrites]
+        possible = [i for i in all_dendrites if i not in current_dendrites]
+        random.shuffle(possible)
+        min_new = min(2, len(possible))
+        max_new = min(3, len(possible))
+        new_dendrite_count = random.randint(min_new, max_new)
         # new_dendrite_count = dendrite_count - len(self.dendrites)
-        for i in range(dendrite_count):
-            self.dendrites.append(Dendrite(population[i]))
+        for i in range(new_dendrite_count):
+            self.dendrites.append(Dendrite(possible[i]))
 
     def doForward(self, neurons):
         z = 0
@@ -146,11 +150,6 @@ class Brain:
 
     def thinkOnce(self, backward=True):
         population = [i for i in self.neurons.keys()]
-        # clearing
-        for p in range(self.world_size, len(self.neurons)):
-            self.neurons[population[p]].output = 0
-            self.neurons[population[p]].backward = None
-            self.neurons[population[p]].incoming_energy = 0
         # forward
         random.shuffle(population)
         for p in population:
@@ -175,8 +174,8 @@ class Brain:
                 if dendrite.from_nid in deleting_nid_s:
                     neuron.dendrites.pop(i)
         # generating new
-        n_count = len(self.neurons)
-        last_nid = max(self.neurons) + 1
+        n_count = len(n_map) - len(deleting_nid_s)
+        last_nid = np.max([x[0] for x in n_map]) + 1
         for i in range(self.max_generation - n_count):
             self.neurons[i + last_nid] = Neuron(i + last_nid)
         for nid in self.neurons:

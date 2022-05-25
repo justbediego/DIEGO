@@ -18,36 +18,26 @@ def dActivation(x):
 
 
 class Dendrite:
-    def __init__(self, from_nid, yes_no=None):
+    def __init__(self, from_nid, weight=None):
         self.from_nid = from_nid
-        if yes_no is not None:
-            self.yes, self.no = yes_no
+        self.learning_rate = .2
+        if weight is not None:
+            self.weight = weight
         else:
-            self.yes = 0
-            while self.yes == 0:
-                self.yes = random.random()
-            self.no = self.yes
-            # while self.no == self.yes or self.no == 0:
-            #     self.no = random.random()
-            # self.yes = self.yes + 10
-            # self.no = self.no + 10
+            self.weight = 0
+            while self.weight == 0:
+                self.weight = random.random()
 
     def getWeight(self):
-        return self.yes
-        # 1 to -1
-        # return (self.yes - self.no) / (self.yes + self.no)
-        # return self.weight
+        return self.weight
 
     def decreaseWeight(self, amount):
-        self.yes = self.yes - amount
-        # if amount > 0:
-        #     self.yes = self.yes + amount
-        # elif amount < 0:
-        #     self.no = self.no - amount
+        self.weight = self.weight - (amount * self.learning_rate)
+        self.learning_rate = self.learning_rate * 0.99995
 
 
 class Neuron:
-    def __init__(self, nid, is_real=False, age=1, bias_weight=0):
+    def __init__(self, nid, is_real=False, age=1, bias=0):
         self.nid = nid
         self.is_real = is_real
         self.dendrites = []
@@ -55,7 +45,7 @@ class Neuron:
         self.output = 0
         self.backward = None
         self.incoming_energy = 0
-        self.bias_weight = bias_weight
+        self.bias = Dendrite(-1, bias)
 
     def getScore(self):
         best = np.max([abs(d.getWeight()) for d in self.dendrites])
@@ -77,7 +67,7 @@ class Neuron:
             self.dendrites.append(Dendrite(possible[i]))
 
     def doForward(self, neurons):
-        z = self.bias_weight
+        z = self.bias.getWeight()
         for d in self.dendrites:
             other = neurons[d.from_nid]
             z = z + other.output * d.getWeight()
@@ -90,18 +80,15 @@ class Neuron:
 
     def doBackward(self, neurons):
         if self.backward is not None:
-            if self.nid == 6:
-                print(self.backward)
             self.age = self.age + 1
             diff = self.backward * dActivation(self.incoming_energy)
-            diff = diff * .5
             for d in self.dendrites:
                 other = neurons[d.from_nid]
-                # if not other.is_real:
-                #     other.backward = (0 if other.backward is None else other.backward) + diff * d.getWeight()
+                if not other.is_real:
+                    other.backward = (0 if other.backward is None else other.backward) + diff * d.getWeight()
                 # update
                 d.decreaseWeight(diff * other.output)
-            self.bias_weight = self.bias_weight - diff
+            self.bias.decreaseWeight(diff)
             self.backward = None
 
 
@@ -126,9 +113,8 @@ class Brain:
         for nid in nid_s:
             neuron = self.neurons[nid]
             neuron.dendrites.sort(key=lambda x: x.from_nid)
-            n_output = ', '.join(
-                [F"{int(d.from_nid)}:{d.yes:.2f}:{d.no:.2f}:{d.getWeight():.2f}" for d in neuron.dendrites])
-            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'},{neuron.age},{neuron.bias_weight:.2f}]-> {n_output}")
+            n_output = ', '.join([F"{int(d.from_nid)}:{d.weight:.2f}" for d in neuron.dendrites])
+            lines.append(F"[{nid},{'R' if neuron.is_real else 'H'},{neuron.age},{neuron.bias.weight:.2f}]-> {n_output}")
         output = '\n'.join(lines)
         with open(filename, 'w') as fp:
             fp.write(output)
@@ -140,16 +126,16 @@ class Brain:
         self.neurons = {}
         for line in lines:
             left, right = line.split("->")
-            nid, is_real, age, bias_weight = left.replace('[', "").replace(']', "").split(",")
+            nid, is_real, age, bias = left.replace('[', "").replace(']', "").split(",")
             nid = int(nid)
             is_real = True if is_real == 'R' else False
             age = int(age)
-            bias_weight = float(bias_weight)
-            self.neurons[nid] = Neuron(nid, is_real, age, bias_weight)
+            bias = float(bias)
+            self.neurons[nid] = Neuron(nid, is_real, age, bias)
             if ':' in right:
                 dendrites = right.split(',')
-                dendrites = [[float(x) for x in d.split(':')] for d in dendrites]
-                dendrites = [Dendrite(d[0], [d[1], d[2]]) for d in dendrites]
+                dendrites = [d.split(':') for d in dendrites]
+                dendrites = [Dendrite(int(d[0]), float(d[1])) for d in dendrites]
                 self.neurons[nid].dendrites = dendrites
 
     def applyState(self, state):

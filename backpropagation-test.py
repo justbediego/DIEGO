@@ -36,6 +36,11 @@ def sigmoid(x):
     return np.divide(1, (1 + np.exp(-x)))
 
 
+def dSigmoid(x):
+    tmp = sigmoid(x)
+    return tmp * (1 - tmp)
+
+
 def relu(x):
     return x if x > 0 else 0
 
@@ -47,12 +52,12 @@ def dRelu(x):
 def forwardProp(xList, wList, bList):
     zh1 = wList[0] * xList[0] + wList[2] * xList[1] + wList[4] * xList[2] + bList[0]
     zh2 = wList[1] * xList[0] + wList[3] * xList[1] + wList[5] * xList[2] + bList[0]
-    h1 = relu(zh1)
-    h2 = relu(zh2)
+    h1 = sigmoid(zh1)
+    h2 = sigmoid(zh2)
     zo1 = wList[6] * h1 + wList[8] * h2 + bList[1]
     zo2 = wList[7] * h1 + wList[9] * h2 + bList[1]
-    o1 = relu(zo1)
-    o2 = relu(zo2)
+    o1 = sigmoid(zo1)
+    o2 = sigmoid(zo2)
     return h1, h2, o1, o2
 
 
@@ -77,12 +82,12 @@ for i in range(numIter):
 
     # dE_dw7
     dE_do1 = o1 - t1
-    do1_dzo1 = dRelu(o1)
+    do1_dzo1 = dSigmoid(o1)
     dzo1_dw7 = h1
     dE_dw7 = dE_do1 * do1_dzo1 * dzo1_dw7
     # dE_dw8
     dE_do2 = o2 - t2
-    do2_dzo2 = dRelu(o2)
+    do2_dzo2 = dSigmoid(o2)
     dzo2_dw8 = h1
     dE_dw8 = dE_do2 * do2_dzo2 * dzo2_dw8
     # dE_dw9
@@ -114,7 +119,7 @@ for i in range(numIter):
     dzo2_dh2 = w10
     dE_dh2 = dE_do1 * do1_dzo1 * dzo1_dh2 + dE_do2 * do2_dzo2 * dzo2_dh2
     # dE_dw2
-    dh2_dzh2 = dRelu(h2)
+    dh2_dzh2 = dSigmoid(h2)
     dzh2_dw2 = x1
     dE_dw2 = dE_dh2 * dh2_dzh2 * dzh2_dw2
     # dE_dw4

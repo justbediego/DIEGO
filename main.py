@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(3)
-brain = Brain(world.getSize(), "brain.init.txt", min_generation=20, max_generation=100)
+brain = Brain(world.getSize(), min_generation=20, max_generation=100)
 
 
 def drawBrain():
@@ -66,8 +66,8 @@ def test():
         for i in range(100):
             world.newState()
             brain.applyState(world.getState())
-            for j in range(100):
-                brain.thinkOnce()
+            for j in range(1):
+                brain.thinkOnce(False)
             result.append([world.getState()[m], brain.neurons[m].output])
     result.sort(key=lambda x: x[0])
     plt.plot([x[0] for x in result])

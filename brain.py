@@ -50,6 +50,8 @@ class Neuron:
         self.bias = Dendrite(-1, bias, age)
 
     def getScore(self):
+        if len(self.dendrites) < 1:
+            return 0
         best = np.max([abs(d.getWeight()) for d in self.dendrites])
         return np.log(self.age) * best
 
@@ -82,6 +84,7 @@ class Neuron:
 
     def doBackward(self, neurons):
         if self.backward is not None:
+            # print(self.backward)
             diff = self.backward * dActivation(self.incoming_energy)
             for d in self.dendrites:
                 other = neurons[d.from_nid]

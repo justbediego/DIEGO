@@ -52,8 +52,8 @@ class Neuron:
     def getScore(self):
         if len(self.dendrites) < 1:
             return 0
-        best = np.max([abs(d.getWeight()) for d in self.dendrites])
-        return np.log(self.age) * best
+        return np.sum([abs(d.getWeight()) for d in self.dendrites])
+        # return np.log(self.age) * best
 
     def mutate(self, neurons):
         all_dendrites = [
@@ -172,10 +172,11 @@ class Brain:
                 dendrite = neuron.dendrites[i]
                 if dendrite.from_nid in deleting_nid_s:
                     neuron.dendrites.pop(i)
-        # generating new
+        # # generating new
         # n_count = len(n_map) - len(deleting_nid_s)
         # last_nid = np.max([x[0] for x in n_map]) + 1
         # for i in range(self.max_generation - n_count):
         #     self.neurons[i + last_nid] = Neuron(i + last_nid)
-        # for nid in self.neurons:
-        #     self.neurons[nid].mutate(self.neurons)
+        #     self.neurons[i + last_nid].mutate(self.neurons)
+        # for i in range(self.world_size):
+        #     self.neurons[i].mutate(self.neurons)

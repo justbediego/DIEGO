@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 world = World(3)
-brain = Brain(world.getSize(), "brain.init.txt", min_generation=20, max_generation=100)
+brain = Brain(world.getSize(), "brain.txt", min_generation=20, max_generation=100)
 
 
 def drawBrain():
@@ -45,7 +45,7 @@ def drawBrain():
 def learnForever():
     while True:
         # 100 things happen in a day
-        for i in range(100):
+        for i in range(1000):
             world.newState()
             brain.applyState(world.getState())
             # drawBrain()
@@ -76,4 +76,4 @@ def test():
 
 
 if __name__ == '__main__':
-    learnForever()
+    test()

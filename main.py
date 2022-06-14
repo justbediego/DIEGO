@@ -48,10 +48,10 @@ def learnForever():
         for i in range(100):
             world.newState()
             brain.applyState(world.getState())
-            # drawBrain()
             # each one is thought X times
-            for j in range(100):
+            for j in range(10):
                 brain.thinkOnce()
+            drawBrain()
         # brain.sleep()
         brain.dumpBrain("brain.txt")
         print("one day")

@@ -8,13 +8,13 @@ def sigmoid(x):
 
 def activation(x):
     # return sigmoid(x)
-    return x if x > 0 else 0
+    return 1 if x > 0.1 else 0
 
 
 def dActivation(x):
     # tmp = sigmoid(x)
     # return tmp * (1 - tmp)
-    return 1 if x > 0 else 0
+    return 1 if x > 0.1 else 0
 
 
 class Dendrite:
@@ -37,9 +37,9 @@ class Dendrite:
         return (self.yes - self.no) / (self.yes + self.no)
 
     def increaseWeight(self, amount):
-        # if amount > 0:
+        if amount > 0:
             self.yes = self.yes + amount
-        # else:
+        else:
             self.no = self.no - amount
 
 
@@ -50,6 +50,7 @@ class Neuron:
         self.dendrites = []
         self.age = age
         self.output = 0
+        self.energy = 0
         self.backward = None
 
     def getScore(self):
@@ -72,29 +73,32 @@ class Neuron:
             self.dendrites.append(Dendrite(possible[i]))
 
     def doForward(self, neurons):
-        o = 0
+        self.energy = 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
             z = (2 * other.output - 1) * d.getWeight()
-            o = o + activation(z)
+            if activation(z) > 0:
+                self.energy = 1
+                break
         if self.is_real:
-            self.backward = self.output - o
+            self.backward = 1 if self.output == self.energy else -1
         else:
-            self.output = o
+            self.output = self.energy
 
     def doBackward(self, neurons):
         if self.backward is not None:
             self.age = self.age + 1
             for d in self.dendrites:
                 other = neurons[d.from_nid]
-                dE_dh = self.backward
-                dh_dz = dActivation((2 * other.output - 1) * d.getWeight())
-                dz_y = (2 * (2 * other.output - 1) * d.no) / ((d.yes + d.no) ** 2)
-                dz_o = 2 * d.getWeight()
-                if not other.is_real:
-                    other.backward = (0 if other.backward is None else other.backward) + (dE_dh * dh_dz * dz_o)
+                # if not other.is_real:
+                #     z = (2 * other.output - 1) * d.getWeight()
+                #     tmp = activation(z)
+                #     new_backward = None if other.output == 0 else self.backward * d.getWeight()
+                #     if new_backward is not None:
+                #         base_backward = 0 if other.backward is None else other.backward
+                #         other.backward = base_backward + new_backward
                 # update
-                d.increaseWeight(dE_dh * dh_dz * dz_y * .01)
+                d.increaseWeight(self.backward * (1 if other.output == self.energy else -1))
             self.backward = None
 
 

@@ -73,32 +73,32 @@ class Neuron:
             self.dendrites.append(Dendrite(possible[i]))
 
     def doForward(self, neurons):
+        if len(self.dendrites) == 0:
+            return
         self.energy = 0
         for d in self.dendrites:
             other = neurons[d.from_nid]
-            z = (2 * other.output - 1) * d.getWeight()
-            if activation(z) > 0:
-                self.energy = 1
-                break
+            self.energy = self.energy + (2 * other.output - 1) * d.getWeight()
+        o = activation(self.energy)
         if self.is_real:
-            self.backward = 1 if self.output == self.energy else -1
+            self.backward = 1 if self.output == o else -1
         else:
-            self.output = self.energy
+            self.output = o
 
     def doBackward(self, neurons):
         if self.backward is not None:
             self.age = self.age + 1
+            o = activation(self.energy)
             for d in self.dendrites:
                 other = neurons[d.from_nid]
+                is_associated = 1 if other.output == o else -1
                 # if not other.is_real:
-                #     z = (2 * other.output - 1) * d.getWeight()
-                #     tmp = activation(z)
-                #     new_backward = None if other.output == 0 else self.backward * d.getWeight()
-                #     if new_backward is not None:
-                #         base_backward = 0 if other.backward is None else other.backward
-                #         other.backward = base_backward + new_backward
+                # # if other.nid == 12:
+                #     base_backward = 0 if other.backward is None else other.backward
+                #     new_backward = self.backward * d.getWeight()
+                #     other.backward = base_backward + new_backward
                 # update
-                d.increaseWeight(self.backward * (1 if other.output == self.energy else -1))
+                d.increaseWeight(self.backward * is_associated)
             self.backward = None
 
 
